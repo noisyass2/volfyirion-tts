@@ -1,0 +1,57 @@
+
+function onload()
+    self.createButton({
+        click_function="clickcount", function_owner=self,
+        position={0,0.1,0}, height=1000, width=3000, color={1,1,1,0}
+    })
+
+    discardzone = {13.190,2.560,9.602}
+end
+
+function clickcount()
+    playzone = 'f0611d'
+    CP = '10d5de'
+    BP = '10a63e'
+    KP = '0f289f'
+    -- get zone
+    zone = getObjectFromGUID(playzone)
+    zoneObjects = zone.getObjects()
+    resetCount(CP)
+    resetCount(BP)
+    resetCount(KP)
+
+    for _, obj in ipairs(zoneObjects) do
+        if  obj.name == "Card" and obj.getName() != 'City' then
+
+            local desc = obj.getDescription()
+            if(desc != nil and isTapped(obj) != true) then
+
+                local meta = JSON.decode(obj.getDescription())
+                increaseCount(CP, meta.CP)
+                increaseCount(BP, meta.BP)
+                increaseCount(KP, meta.KP)
+            end
+        end
+    end
+end
+
+function increaseCount(guid,num)
+    local token = getObjectFromGUID(guid)
+    token.call("increasecustom",num);
+end
+
+function resetCount(guid)
+    local token = getObjectFromGUID(guid)
+    token.setDescription('0')
+    token.call("customSet")
+end
+
+function isTapped(card)
+    --print(y >= -5 and y <=5)
+    -- print(y >= 85 and y <=95) tapped
+    --print(y >= 175 and y <= 185)
+    -- print(y >= 265 and y <= 275) tapped
+    local y = card.getRotation().y
+
+    return (y >= 85 and y <=95) or (y >= 265 and y <= 275)
+end

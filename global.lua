@@ -7,7 +7,7 @@ function onload()
     shuffleWonders()
     refillWonders()
 
-    findPosition('cc0ecc')
+    --findPosition('d3ae38')
 end
 
 function onPlayerEndTurn()
@@ -20,20 +20,18 @@ function onPlayerEndTurn()
 
 
     refillWonders()
-    trashCards()
+
+    
+    increaseBP('10a63e',8)
+
 end
 
 function trashCards()
-    -- target spot {17.208, 2.452, -0.558}
-    targettrashpos = {17.208, 2.452, -0.558}
-    trashZone = getObjectFromGUID('2a1be9')
+    trashZone = getObjectFromGUID('bb2afe')
     trashObjects = trashZone.getObjects()
 
     for _,obj in ipairs(trashObjects) do
         print(obj)        
-        if obj.name == "Card" or obj.name == "Deck" then
-            obj.setPositionSmooth(targettrashpos)
-        end
     end
 end
 
@@ -125,4 +123,10 @@ function findPosition(guid)
     print(pos.x)
     print(pos.y)
     print(pos.z)
+end
+
+
+function increaseBP(guid,num)
+    local token = getObjectFromGUID(guid)
+    token.call("increasecustom",num);
 end

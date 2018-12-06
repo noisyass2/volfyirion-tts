@@ -1,0 +1,178 @@
+slots = {
+    {1.532,0.171,0.221},
+    {0.440,0.171,0.221},
+    {-0.654,0.171,0.221},
+    {-1.74,0.171,0.221},
+    {-2.833,0.171,0.221}
+}
+whitediscardzone = {15.805,4.583,-9.860}
+greendiscardzone = {13.190,4.560,9.602}
+tempButtonColors = {1,1,1,0}
+whiteCP = 'b6f970' --'10d5de'
+whiteBP = 'a425b8' --'10a63e'
+whiteKP = '9efa9f' --'0f289f'
+function onload()
+
+    self.createButton({
+        click_function="clickrefillassets", function_owner=self,
+        position={-2.554,0.171,-0.821}, height=300, width=820, color=tempButtonColors
+    })
+
+    self.createButton({click_function="slot1", function_owner = self, position = {-1.532,0.371,0.221},height=200,width=200,color=tempButtonColors})
+    self.createButton({click_function="slot2", function_owner = self, position = {-0.440,0.371,0.221},height=200,width=200,color=tempButtonColors})
+    self.createButton({click_function="slot3", function_owner = self, position = {0.654,0.371,0.221},height=200,width=200,color=tempButtonColors})
+    self.createButton({click_function="slot4", function_owner = self, position = {1.74,0.371,0.221},height=200,width=200,color=tempButtonColors})
+    self.createButton({click_function="slot5", function_owner = self, position = {2.833,0.371,0.221},height=200,width=200,color=tempButtonColors})
+    -- always shuffle deck
+    shuffleDeck()
+end
+
+function shuffleDeck()
+
+    assetdeck = getObjectFromGUID('515348')
+    assetdeck.shuffle()
+end
+
+function slot1(params,p2,p3)
+    local cards = findObjectsAtPosition(slots[1])
+    moveOrReplace(cards,p2,p3,1)
+end
+
+function slot2(params,p2,p3)
+    local cards = findObjectsAtPosition(slots[2])
+    moveOrReplace(cards,p2,p3,2)
+end
+function slot3(params,p2,p3)
+    local cards = findObjectsAtPosition(slots[3])
+    moveOrReplace(cards,p2,p3,3)
+end
+
+function slot4(params,p2,p3)
+    local cards = findObjectsAtPosition(slots[4])
+    moveOrReplace(cards,p2,p3,4)
+end
+
+function slot5(params,p2,p3)
+    local cards = findObjectsAtPosition(slots[5])
+    moveOrReplace(cards,p2,p3,5)
+end
+
+function moveOrReplace(cards,p2,p3,p4)
+    if(#cards > 0) then
+        -- replace
+        cardOnSlot = cards[1]
+        if(p3) then
+            -- replace card
+            replacecard(cardOnSlot,p4,p2)
+        else
+            -- gain card
+            movetodiscard(cardOnSlot,p2)
+        end
+
+    end
+end
+
+function replacecard(cardOnSlot,p4,p2)
+    -- check if KP is enough
+    requiredKP = 2
+    KPObj = getObjectFromGUID("9efa9f")
+
+    if(p2 == "Green") then
+        KPObj = getObjectFromGUID("0f289f")
+    end
+
+    if(requiredKP <= KPObj.getVar("count")) then
+        -- move card
+        cardOnSlot.setPositionSmooth(assetdeck.getPosition(), false,false)
+        -- refill
+        targetpos = slots[p4]
+        --startLuaCoroutine(self, "delayedRefill")
+        dealoneto(targetpos)
+
+        KPObj.call("increasecustom",-requiredKP)
+    end
+
+end
+
+function movetodiscard(cardOnSlot,p2)
+    CPObj = getObjectFromGUID("b6f970")
+    rot = 90
+    dzone = whitediscardzone
+    requiredCP = JSON.decode(cardOnSlot.getDescription()).CS
+    if(p2=="Green") then
+        CPObj = getObjectFromGUID("10d5de")
+        rot=-90
+        dzone = greendiscardzone
+
+    end
+
+    if(requiredCP <= CPObj.getVar("count")) then
+        cardOnSlot.rotate({0,rot,0})
+        cardOnSlot.setPositionSmooth(dzone, false, false)
+        CPObj.call("increasecustom",-requiredCP)
+
+        local meta = JSON.decode(cardOnSlot.getDescription())
+        -- add to tally
+        Global.call("tallycard",{color = meta.CR,player=p2})
+    end
+end
+
+function delayedRefill()
+
+    for i=1, 100 do
+        coroutine.yield(0)
+    end
+
+    clickrefillassets()
+
+    return 1
+end
+function clickrefillassets()
+    -- delay a few frames
+
+    -- getcount(slots)
+    -- print(getcount(slots))
+    for _, obj in ipairs(slots) do
+        card = findObjectsAtPosition(obj)
+        if(card == nil or #card == 0 ) then
+            dealoneto(obj)
+        end
+    end
+
+    return 1
+end
+
+function dealoneto(targetpos)
+    assetdeck = getObjectFromGUID('515348')
+    if(assetdeck != nil) then
+        assetdeck.takeObject({position = self.positionToWorld(targetpos)})
+    end
+end
+
+function findObjectsAtPosition(localPos)
+    --We convert that local position to a global table position
+    local globalPos = self.positionToWorld(localPos)
+    --We then do a raycast of a sphere on that position to find objects there
+    --It returns a list of hits which includes references to what it hit
+    local objList = Physics.cast({
+        origin=globalPos, --Where the cast takes place
+        direction={0,1,0}, --Which direction it moves (up is shown)
+        type=2, --Type. 2 is "sphere"
+        size={2,2,2}, --How large that sphere is
+        max_distance=1, --How far it moves. Just a little bit
+        debug=false --If it displays the sphere when casting.
+    })
+
+    --Now we have objList which contains any and all objects in that area.
+    --But we only want decks and cards. So we will create a new list
+    local decksAndCards = {}
+    --Then go through objList adding any decks/cards to our new list
+    for _, obj in ipairs(objList) do
+        if obj.hit_object.tag == "Deck" or obj.hit_object.tag == "Card" then
+            table.insert(decksAndCards, obj.hit_object)
+        end
+    end
+
+    --Now we return this to where it was called with the information
+    return decksAndCards
+end

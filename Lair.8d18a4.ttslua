@@ -1,0 +1,155 @@
+lairslots = {
+    {1.090, 0.268, 1.206},
+    {-0.193, 0.268, 1.206}
+}
+whitediscardzone = {15.805,4.583,-9.860}
+greendiscardzone = {13.190,4.560,9.602}
+tempButtonColors = {1,1,1,0}
+
+
+function onload()
+
+    self.createButton({click_function="slot1", function_owner = self, position = {0.090, 0.568, 1.206},height=200,width=200,color=tempButtonColors})
+    self.createButton({click_function="slot2", function_owner = self, position = {-1.193, 0.568, 1.206},height=200,width=200,color=tempButtonColors})
+
+    shuffleWonders()
+    startLuaCoroutine(self, "delayedRefill")
+
+end
+
+function delayedRefill()
+
+    for i=1, 100 do
+        coroutine.yield(0)
+    end
+
+    refillWonders()
+
+    return 1
+end
+
+function shuffleWonders()
+    assetdeck = getObjectFromGUID("515348")
+    assetdeck.shuffle()
+end
+
+function slot1(params,p2,p3)
+    local cards = findObjectsAtPosition(lairslots[2])
+    if(#cards>0) then
+        cardOnSlot = cards[1]
+        movetodiscard(cardOnSlot,p2)
+    end
+
+end
+
+function slot2(params,p2,p3)
+    local cards = findObjectsAtPosition(lairslots[1])
+    if(#cards>0) then
+        cardOnSlot = cards[1]
+
+        movetodiscard(cardOnSlot,p2)
+    end
+end
+
+function movetodiscard(cardOnSlot,p2)
+    cardmeta = JSON.decode(cardOnSlot.getDescription())
+    requiredBP = cardmeta.CS
+    BPObj = nil
+    if(p2=="White") then
+        -- check if has enough BP
+        BPObj = getObjectFromGUID("a425b8")
+        rot = 90
+        dzone = whitediscardzone
+
+    else
+        BPObj = getObjectFromGUID("10a63e")
+        rot = -90
+        dzone = greendiscardzone
+
+    end
+
+    if(requiredBP <= BPObj.getVar("count")) then
+        cardOnSlot.rotate({0,rot,0})
+        cardOnSlot.setPositionSmooth(dzone, false, false)
+        BPObj.call("increasecustom",-requiredBP)
+
+        -- for tallying
+        Global.call("addBoughtWonder",p2)
+    end
+
+
+end
+
+function findPosition(guid)
+    local pos = self.positionToLocal(getObjectFromGUID(guid).getPosition())
+    print(pos.x)
+    print(pos.y)
+    print(pos.z)
+end
+
+function refillWonders()
+
+    for _, obj in ipairs(lairslots) do
+        card = findObjectsAtPosition(obj)
+        if(card == nil or #card == 0 ) then
+
+            dealoneto(obj)
+        end
+    end
+end
+
+
+
+function dealoneto(targetpos)
+
+    assetdeck = findObjectsAtPosition( { -1.049,0.181,-0.829})
+
+    if(#assetdeck > 0) then
+        for _, obj in ipairs(assetdeck) do
+
+            if obj.name == "Deck" then
+
+                obj.takeObject({position = self.positionToWorld(targetpos), flip=true})
+                return
+            elseif obj.name == "Card" then
+
+                obj.flip()
+                obj.setPositionSmooth(self.positionToWorld(targetpos))
+                return
+            end
+
+        end
+
+    end
+end
+
+
+function findObjectsAtPosition(localPos)
+    --We convert that local position to a global table position
+    local globalPos = self.positionToWorld(localPos)
+    --We then do a raycast of a sphere on that position to find objects there
+    --It returns a list of hits which includes references to what it hit
+    local objList = Physics.cast({
+        origin=globalPos, --Where the cast takes place
+        direction={0,1,0}, --Which direction it moves (up is shown)
+        type=2, --Type. 2 is "sphere"
+        size={0.5,0.5,0.5}, --How large that sphere is
+        max_distance=1, --How far it moves. Just a little bit
+        debug=false --If it displays the sphere when casting.
+    })
+
+    --Now we have objList which contains any and all objects in that area.
+    --But we only want decks and cards. So we will create a new list
+    local decksAndCards = {}
+    --Then go through objList adding any decks/cards to our new list
+    -- print(objList)
+    -- print(#objList)
+    for _, obj in ipairs(objList) do
+        if obj.hit_object.tag == "Deck" or obj.hit_object.tag == "Card" then
+            table.insert(decksAndCards, obj.hit_object)
+        end
+    end
+
+    --Now we return this to where it was called with the information
+    return decksAndCards
+end

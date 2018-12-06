@@ -12,20 +12,20 @@ function check()
     var deck = JSON.parse(deckJson.toString());
     var cards = deck.ObjectStates[0];
 
-    console.log(cards);
+
     cards.ContainedObjects.forEach(card => {
         var meta = new LINQ(metadata)
-        .Where(function(c) { return c.Name + '\r\n' === card.Nickname; })
+        .Where(function(c) { return c.Name + '\r\n' === card.Nickname || c.Name === card.Nickname;  })
         .First();
 
         if(meta)
         {
-            card.LuaScriptState = JSON.stringify(meta);
+            card.Description = JSON.stringify(meta);
             
         }
         else{
             console.log("NOT FOUND : " + card.Nickname);
-            console.log(card);
+            // console.log(card);
         }
     });
 
