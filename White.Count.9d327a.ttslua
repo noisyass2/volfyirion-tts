@@ -37,14 +37,14 @@ function clickcount()
         end
     end
 
-    --check2ndeffects()
+    check2ndeffects()
 
 
 end
 
 function increaseCount(guid,num)
     local token = getObjectFromGUID(guid)
-    token.call("increasecustom",num);
+    token.call("increasecustom",num)
 end
 
 function resetCount(guid)
@@ -67,7 +67,7 @@ end
 function check2ndeffects()
     zone = getObjectFromGUID(playzone)
     zoneObjects = zone.getObjects()
-
+    cs = {}
     for _, obj in ipairs(zoneObjects) do
         if  obj.name == "Card" and obj.getName() != 'City' then
             local desc = obj.getDescription()
@@ -76,12 +76,103 @@ function check2ndeffects()
             if(desc != nil and isTapped(obj) != true) then
 
                 local meta = JSON.decode(obj.getDescription())
-                print(meta.Name .. " " .. meta.CR)
+                table.insert(cs,obj)
             end
         end
     end
 
+    for k,v in pairs(cs) do
+        satisfied = check2ndoncard(v,cs)
+        if(satisfied) then print("SUCCESS") else print("BOOO") end
+        print("---")
+    end
+
 end
+
+
+
+
+function check2ndoncard(v,cards)
+    -- get other cards colors 
+    local othercards = getothercards(cards,v)
+    print(othercards['G']) --G
+    print(othercards['R']) --R
+    print(othercards['P']) --P
+    print("-")
+
+    -- check conditions
+    -- split conditions by ,
+    cd={G=0,R=0,P=0}
+    cds = Split(v['CD'],',')
+    for i,j in pairs(cds) do
+        cd[j] = cd[j] + 1
+    end
+
+    print(cd.G)
+    print(cd.R)
+    print(cd.P)
+    print("-")
+
+    -- check if satisfied
+    satisfied = true
+    crs = {'G','R','P'}
+    for i,j in pairs(crs) do
+        if(cd[j] > othercards[j]) then satisfied = false end
+    end
+
+    return satisfied
+end
+
+
+
+function getothercards(cardses,cd)
+    local restbl = {}
+    restbl.G=0
+    restbl.R=0
+    restbl.P=0
+
+    for k,v in ipairs(cardses) do
+        
+        if not (v.ID == cd.ID) then            
+            if(restbl[v.CR] == nil) then restbl[v.CR] = 0 end
+            restbl[v.CR] = restbl[v.CR] + 1
+            
+        end
+    end
+
+    return restbl
+end
+
+
+-- utils
+
+-- Compatibility: Lua-5.0
+function Split(str, delim, maxNb)
+    -- Eliminate bad cases...
+    if string.find(str, delim) == nil then
+       return { str }
+    end
+    if maxNb == nil or maxNb < 1 then
+       maxNb = 0    -- No limit
+    end
+    local result = {}
+    local pat = "(.-)" .. delim .. "()"
+    local nb = 0
+    local lastPos
+    for part, pos in string.gfind(str, pat) do
+       nb = nb + 1
+       result[nb] = part
+       lastPos = pos
+       if nb == maxNb then
+          break
+       end
+    end
+    -- Handle the last field
+    if nb ~= maxNb then
+       result[nb + 1] = string.sub(str, lastPos)
+    end
+    return result
+ end
 
 
 

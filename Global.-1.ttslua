@@ -2,9 +2,10 @@ wplayzone = '9735ac'
 gplayzone = 'f0611d'
 ts = { whitecitieskilledbyvolfy = 0,
 greencitieskilledbyvolfy = 0,
- whitewondercardsbought = 0,
- greenwondercardsbought = 0,
+whitewondercardsbought = 0,
+greenwondercardsbought = 0,
 removedcards = 0}
+
 function onload()
     assetSpread = getObjectFromGUID('7e4572')
 
@@ -19,7 +20,7 @@ function onPlayerTurn(player)
     onPlayerEndTurn(player.color)
 end
 
-function onPlayerEndTurn(color)
+function onPlayerEndTurn(nextPlayer)
     assetSpread = getObjectFromGUID('7e4572')
     lair = getObjectFromGUID("8d18a4")
 
@@ -32,7 +33,7 @@ function onPlayerEndTurn(color)
 
 
     -- discard
-    if(color == 'White') then
+    if(nextPlayer == 'White') then
         discardbtn = getObjectFromGUID("5a6b5b")
         maindeck = getObjectFromGUID("abbb3c")
     else
@@ -47,7 +48,7 @@ function onPlayerEndTurn(color)
     whitedeck.call("cleanup")
 
     -- check volfy
-    volfycheck()
+    volfycheck(nextPlayer)  
 
 
 end
@@ -91,24 +92,30 @@ function tallydecks()
     end
 end
 
-function volfycheck()
+function volfycheck(color)
     volfy = getObjectFromGUID('e5f881')
 
-    cards = findObjectsAtPosition(volfy.getPosition())
-
+    cards = findObjectsAtPosition(volfy.getPosition())        
     if(#cards > 0) then
-        for _, obj in ipairs(cards) do
-            obj.flip()
-        end
+        -- check if defending player end turn, z>0 = green , z < 0 = white
+        if((volfy.getPosition().z > 0 and color == 'White') or (volfy.getPosition().z < 0 and color == 'Green') then
+            for _, obj in ipairs(cards) do
+                obj.flip()
+            end
 
-        if(volfy.getPosition().z > 0 ) then
-            ts.greencitieskilledbyvolfy = ts.greencitieskilledbyvolfy + 1
+            if(volfy.getPosition().z > 0 ) then
+                ts.greencitieskilledbyvolfy = ts.greencitieskilledbyvolfy + 1
+            else
+                ts.whitecitieskilledbyvolfy = ts.whitecitieskilledbyvolfy + 1
+            end
+
+
+            volfy.setPositionSmooth(volfypos, false, false)
         else
-            ts.whitecitieskilledbyvolfy = ts.whitecitieskilledbyvolfy + 1
+            print("WARNING: Imminent Destruction!!!")            
+            print("Volfy: RAWR!")
         end
 
-
-        volfy.setPositionSmooth(volfypos, false, false)
     end
 
 end
@@ -124,22 +131,22 @@ function tally()
     -- print("white lost " .. getDestroyedCitiesCount(whiteobjs) .. " cities")
     -- print("green lost " .. getDestroyedCitiesCount(grnobjs) .. " cities")
 
-    ts.whitecitiesdestroyed = getDestroyedCitiesCount(whiteobjs)
-    ts.greencitiesdestroyed = getDestroyedCitiesCount(grnobjs)
+    ts.whitecities = getDestroyedCitiesCount(whiteobjs)
+    ts.greencities = getDestroyedCitiesCount(grnobjs)
     -- count trash
     tallytrash()
 
     -- count decks
     tallydecks()
-    if(ts.whitecitiesdestroyed > ts.greencitiesdestroyed) then ts.winner = "Green (P2)" else ts.winner = "White(P1)" end
+    if(ts.whitecities[1] -  ts.whitecities[2] > ts.greencities[1] - ts.greencities[2]) then ts.winner =  "White(P1)" else ts.winner = "Green (P2)" end
     ts.time = getObjectFromGUID('bff079').getValue() / 60
     ts.secs = getObjectFromGUID('bff079').getValue() % 60
     notebook.setDescription(ts.winner .. " wins. Game took " .. math.floor(ts.time) .. 'm' .. ts.secs ..  's\n\r'
-    .."P1 lost " .. ts.whitecitiesdestroyed .. " cities," .. ts.whitecitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
+    .."P1 lost " .. ts.whitecities[2] .. " cities," .. ts.whitecitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
     .. "P1 bought " .. ts.whitewondercardsbought .. " wonders  & " .. ts.wcardsbought .. 'cards\n\r'
     .. "P1 has " .. ts.wdeckcount .. " cards left in the deck" .. '\n\r'
 
-    .. "P2 lost " .. ts.greencitiesdestroyed .. " cities,"  .. ts.greencitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
+    .. "P2 lost " .. ts.greencities[2] .. " cities,"  .. ts.greencitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
     .. "P2 bought " .. ts.greenwondercardsbought .. " wonders & " .. ts.gcardsbought .. 'cards\n\r'
     .. "P2 has " .. ts.gdeckcount .. "  cards left in the deck" .. '\n\r'
 
@@ -148,19 +155,20 @@ function tally()
 end
 
 function getDestroyedCitiesCount(objs)
-    local count = 0
+    local dcount = 0
+    local ccount = 0
     for _, obj in ipairs(objs) do
         if  obj.name == "Card" and (obj.getName() == 'City' or obj.getName() == 'Lair') then
             local desc = obj.getDescription()
 
             if(isFlipped(obj) == true) then
-                count = count + 1
+                dcount = dcount + 1
             end
-
+            ccount = ccount + 1
         end
 
     end
-    return count
+    return {ccount,dcount}
 
 end
 
