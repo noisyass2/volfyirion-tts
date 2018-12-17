@@ -5,14 +5,21 @@ greencitieskilledbyvolfy = 0,
 whitewondercardsbought = 0,
 greenwondercardsbought = 0,
 removedcards = 0}
+mains = {
+    White = getObjectFromGUID('abbb3c'), Green = getObjectFromGUID('695488'), Yellow = getObjectFromGUID('d1bb6c'), Blue = getObjectFromGUID('71f051')  }
 
 function onload()
-    assetSpread = getObjectFromGUID('7e4572')
 
-    assetSpread.call('shuffleDeck')
-    assetSpread.call("clickrefillassets")
+    -- assetSpread = getObjectFromGUID('7e4572')
+    --
+    -- assetSpread.call('shuffleDeck')
+    -- assetSpread.call("clickrefillassets")
     volfypos = getObjectFromGUID('e5f881').getPosition()
+    mains = { White = getObjectFromGUID('abbb3c'), Green = getObjectFromGUID('695488'), Yellow = getObjectFromGUID('d1bb6c'), Blue = getObjectFromGUID('71f051')  }
+    log(mains)
+    log(Turns.getPreviousTurnColor())
 
+    createWonderButtons()
 end
 
 function onPlayerTurn(player)
@@ -20,20 +27,19 @@ function onPlayerTurn(player)
     onPlayerEndTurn(player.color)
 end
 
-function onPlayerEndTurn(nextPlayer)
+function onPlayerEndTurn(color)
+
     assetSpread = getObjectFromGUID('7e4572')
     lair = getObjectFromGUID("8d18a4")
 
     assetSpread.call("clickrefillassets")
 
     -- trash cards
-
-
     lair.call("refillWonders")
 
 
     -- discard
-    if(nextPlayer == 'White') then
+    if(color == 'White') then
         discardbtn = getObjectFromGUID("5a6b5b")
         maindeck = getObjectFromGUID("abbb3c")
     else
@@ -41,18 +47,22 @@ function onPlayerEndTurn(nextPlayer)
         maindeck = getObjectFromGUID("695488")
     end
 
-        discardbtn.call("clickdiscard")
+        -- discardbtn.call("clickdiscard")
+    discardmain = mains[Turns.getPreviousTurnColor()]
+    discardmain.call("discard")
     greendeck = getObjectFromGUID("abbb3c")
     whitedeck = getObjectFromGUID("695488")
     greendeck.call("cleanup")
     whitedeck.call("cleanup")
 
     -- check volfy
-    volfycheck(nextPlayer)  
-
+    volfycheck(color)
 
 end
 
+function getLastMain()
+    return 0
+end
 
 function tallytrash()
     --{-12.888,2.452,9.465}
@@ -92,13 +102,14 @@ function tallydecks()
     end
 end
 
-function volfycheck(color)
+function volfycheck(nextplayer)
     volfy = getObjectFromGUID('e5f881')
 
-    cards = findObjectsAtPosition(volfy.getPosition())        
+    cards = findObjectsAtPosition(volfy.getPosition())
+
     if(#cards > 0) then
-        -- check if defending player end turn, z>0 = green , z < 0 = white
-        if((volfy.getPosition().z > 0 and color == 'White') or (volfy.getPosition().z < 0 and color == 'Green') then
+        if((volfy.getPosition().z > 0 and nextplayer == "White") or (volfy.getPosition().z < 0 and nextplayer == "Green")) then
+
             for _, obj in ipairs(cards) do
                 obj.flip()
             end
@@ -111,9 +122,7 @@ function volfycheck(color)
 
 
             volfy.setPositionSmooth(volfypos, false, false)
-        else
-            print("WARNING: Imminent Destruction!!!")            
-            print("Volfy: RAWR!")
+
         end
 
     end
@@ -131,22 +140,22 @@ function tally()
     -- print("white lost " .. getDestroyedCitiesCount(whiteobjs) .. " cities")
     -- print("green lost " .. getDestroyedCitiesCount(grnobjs) .. " cities")
 
-    ts.whitecities = getDestroyedCitiesCount(whiteobjs)
-    ts.greencities = getDestroyedCitiesCount(grnobjs)
+    ts.whitecitiesdestroyed = getDestroyedCitiesCount(whiteobjs)
+    ts.greencitiesdestroyed = getDestroyedCitiesCount(grnobjs)
     -- count trash
     tallytrash()
 
     -- count decks
     tallydecks()
-    if(ts.whitecities[1] -  ts.whitecities[2] > ts.greencities[1] - ts.greencities[2]) then ts.winner =  "White(P1)" else ts.winner = "Green (P2)" end
+    if(ts.whitecitiesdestroyed > ts.greencitiesdestroyed) then ts.winner = "Green (P2)" else ts.winner = "White(P1)" end
     ts.time = getObjectFromGUID('bff079').getValue() / 60
     ts.secs = getObjectFromGUID('bff079').getValue() % 60
     notebook.setDescription(ts.winner .. " wins. Game took " .. math.floor(ts.time) .. 'm' .. ts.secs ..  's\n\r'
-    .."P1 lost " .. ts.whitecities[2] .. " cities," .. ts.whitecitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
+    .."P1 lost " .. ts.whitecitiesdestroyed .. " cities," .. ts.whitecitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
     .. "P1 bought " .. ts.whitewondercardsbought .. " wonders  & " .. ts.wcardsbought .. 'cards\n\r'
     .. "P1 has " .. ts.wdeckcount .. " cards left in the deck" .. '\n\r'
 
-    .. "P2 lost " .. ts.greencities[2] .. " cities,"  .. ts.greencitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
+    .. "P2 lost " .. ts.greencitiesdestroyed .. " cities,"  .. ts.greencitieskilledbyvolfy .. " cities to Volfyirion" .. '\n\r'
     .. "P2 bought " .. ts.greenwondercardsbought .. " wonders & " .. ts.gcardsbought .. 'cards\n\r'
     .. "P2 has " .. ts.gdeckcount .. "  cards left in the deck" .. '\n\r'
 
@@ -155,20 +164,19 @@ function tally()
 end
 
 function getDestroyedCitiesCount(objs)
-    local dcount = 0
-    local ccount = 0
+    local count = 0
     for _, obj in ipairs(objs) do
         if  obj.name == "Card" and (obj.getName() == 'City' or obj.getName() == 'Lair') then
             local desc = obj.getDescription()
 
             if(isFlipped(obj) == true) then
-                dcount = dcount + 1
+                count = count + 1
             end
-            ccount = ccount + 1
+
         end
 
     end
-    return {ccount,dcount}
+    return count
 
 end
 
@@ -216,6 +224,40 @@ function findObjectsAtPosition(localPos)
     return decksAndCardses
 end
 
+function findObjectsAtPositionPrecise(params)
+
+        --We convert that local position to a global table position
+        local globalPos = params[1]
+        --We then do a raycast of a sphere on that position to find objects there
+        --It returns a list of hits which includes references to what it hit
+        local objList = Physics.cast({
+            origin=params[1], --Where the cast takes place
+            direction={0,1,0}, --Which direction it moves (up is shown)
+            type=2, --Type. 2 is "sphere"
+            size={params[2],params[2],params[2]}, --How large that sphere is
+            max_distance=1, --How far it moves. Just a little bit
+            debug=true --If it displays the sphere when casting.
+        })
+
+        --Now we have objList which contains any and all objects in that area.
+        --But we only want decks and cards. So we will create a new list
+        local decksAndCardses = {}
+
+        --Then go through objList adding any decks/cards to our new list
+        for _, obj in ipairs(objList) do
+
+             if obj.hit_object.tag == "Deck" or obj.hit_object.tag == "Card" then
+                 table.insert(decksAndCardses, obj.hit_object)
+             end
+        end
+
+        --Now we return this to where it was called with the information
+        return decksAndCardses
+end
+
+function findObjectsAtPosition(localPos)
+    return findObjectsAtPositionPrecise({localPos,2})
+end
 
 function addBoughtWonder(player)
     if(player == 'White') then
@@ -226,6 +268,15 @@ function addBoughtWonder(player)
 
 end
 
+function createWonderButtons()
+    --log(getObjectFromGUID('6b79e6').getPosition()) --{-8.635, 2.452,-2.387 }
+    whiteX = {-8.635, 2.452,-2.387 }
+    interval = 3.349
+
+    for i=1,6,1 do
+
+    end
+end
 
 function dump(o)
    if type(o) == 'table' then

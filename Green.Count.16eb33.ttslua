@@ -33,7 +33,10 @@ function clickcount()
             end
         end
     end
+    check2ndeffects()
 end
+
+
 
 function increaseCount(guid,num)
     local token = getObjectFromGUID(guid)
@@ -54,4 +57,101 @@ function isTapped(card)
     local y = card.getRotation().y
 
     return (y >= 85 and y <=95) or (y >= 265 and y <= 275)
+end
+
+
+
+
+function check2ndeffects()
+    zone = getObjectFromGUID(playzone)
+    zoneObjects = zone.getObjects()
+    cs = {}
+    for _, obj in ipairs(zoneObjects) do
+        if  obj.name == "Card" and obj.getName() != 'City' then
+            local desc = obj.getDescription()
+
+
+            if(desc != nil and isTapped(obj) != true) then
+
+                local meta = JSON.decode(obj.getDescription())
+                table.insert(cs,obj)
+            end
+        end
+    end
+
+    for k,v in pairs(cs) do
+        satisfied = check2ndoncard(v,cs)
+        if(satisfied) then
+            tokenBag = getObjectFromGUID('293024')
+            tokenBag.takeObject({position = v.getPosition()})
+
+        else
+
+        end
+
+    end
+
+end
+
+function check2ndoncard(v,cards)
+    -- get other cards colors
+    local othercards = getothercards(cards,v)
+
+
+    -- check conditions
+    -- split conditions by ,
+    cd={G=0,R=0,P=0}
+    if(v.getDescription() == nil or v.getDescription() == '') then return false end
+    local meta = JSON.decode(v.getDescription())
+
+    if(meta == nil or meta['CD'] == nil or meta['CD'] == "NA" or meta['CD'] == "TR" or meta['CD'] == "RM" or meta['CD'] == "X") then return false end
+    cds = Split(meta['CD'],',')
+
+    for i,j in pairs(cds) do
+        cd[j] = cd[j] + 1
+    end
+
+
+
+    -- check if satisfied
+    satisfied = true
+    crs = {'G','R','P'}
+    for i,j in pairs(crs) do
+        if(cd[j] > othercards[j]) then satisfied = false end
+    end
+
+    return satisfied
+end
+
+
+
+function getothercards(cardses,cd)
+    local restbl = {}
+    restbl.G=0
+    restbl.R=0
+    restbl.P=0
+
+    for k,v in ipairs(cardses) do
+
+        if not (v.getGUID() == cd.getGUID()) then
+            local meta = JSON.decode(v.getDescription())
+            if(restbl[meta.CR] == nil) then restbl[meta.CR] = 0 end
+            restbl[meta.CR] = restbl[meta.CR] + 1
+
+        end
+    end
+
+    return restbl
+end
+
+function Split(inputstr, sep)
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={} ; i=1
+        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+                t[i] = str
+                i = i + 1
+        end
+        return t
 end

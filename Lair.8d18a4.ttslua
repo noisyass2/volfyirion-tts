@@ -8,18 +8,18 @@ tempButtonColors = {1,1,1,0}
 
 
 function onload()
-
+    assetdeckpos = {}
     self.createButton({click_function="slot1", function_owner = self, position = {0.090, 0.568, 1.206},height=200,width=200,color=tempButtonColors})
     self.createButton({click_function="slot2", function_owner = self, position = {-1.193, 0.568, 1.206},height=200,width=200,color=tempButtonColors})
 
-    shuffleWonders()
-    startLuaCoroutine(self, "delayedRefill")
-
+    -- shuffleWonders()
+    -- startLuaCoroutine(self, "delayedRefill")
+    assetdeckpos = {-1.090, 0.268, -1.206}
 end
 
 function delayedRefill()
 
-    for i=1, 100 do
+    for i=1, 222,1  do
         coroutine.yield(0)
     end
 
@@ -29,12 +29,12 @@ function delayedRefill()
 end
 
 function shuffleWonders()
-    assetdeck = getObjectFromGUID("515348")
+    if(assetdeck == nil) then getAssetDeck() end
     assetdeck.shuffle()
 end
 
 function slot1(params,p2,p3)
-    local cards = findObjectsAtPosition(lairslots[2])
+    local cards = Global.call("findObjectsAtPositionPrecise",{self.positionToWorld(lairslots[2]),1})
     if(#cards>0) then
         cardOnSlot = cards[1]
         movetodiscard(cardOnSlot,p2)
@@ -43,7 +43,7 @@ function slot1(params,p2,p3)
 end
 
 function slot2(params,p2,p3)
-    local cards = findObjectsAtPosition(lairslots[1])
+    local cards = Global.call("findObjectsAtPositionPrecise",{self.positionToWorld(lairslots[1]),1})
     if(#cards>0) then
         cardOnSlot = cards[1]
 
@@ -90,9 +90,10 @@ end
 function refillWonders()
 
     for _, obj in ipairs(lairslots) do
-        card = findObjectsAtPosition(obj)
-        if(card == nil or #card == 0 ) then
+        card = Global.call("findObjectsAtPositionPrecise",{self.positionToWorld(obj),1})
 
+        if(card == nil or #card == 0 ) then
+            print("dealing one to slot")
             dealoneto(obj)
         end
     end
@@ -100,15 +101,17 @@ end
 
 
 
+
 function dealoneto(targetpos)
 
-    assetdeck = findObjectsAtPosition( { -1.049,0.181,-0.829})
-
-    if(#assetdeck > 0) then
-        for _, obj in ipairs(assetdeck) do
+    assetdecks = Global.call("findObjectsAtPosition",self.positionToWorld(assetdeckpos))
+    log(assetdecks)
+    if(#assetdecks > 0) then
+        for _, obj in ipairs(assetdecks) do
 
             if obj.name == "Deck" then
 
+                print("dealing one from deck")
                 obj.takeObject({position = self.positionToWorld(targetpos), flip=true})
                 return
             elseif obj.name == "Card" then
@@ -124,32 +127,27 @@ function dealoneto(targetpos)
 end
 
 
-function findObjectsAtPosition(localPos)
-    --We convert that local position to a global table position
-    local globalPos = self.positionToWorld(localPos)
-    --We then do a raycast of a sphere on that position to find objects there
-    --It returns a list of hits which includes references to what it hit
-    local objList = Physics.cast({
-        origin=globalPos, --Where the cast takes place
-        direction={0,1,0}, --Which direction it moves (up is shown)
-        type=2, --Type. 2 is "sphere"
-        size={0.5,0.5,0.5}, --How large that sphere is
-        max_distance=1, --How far it moves. Just a little bit
-        debug=false --If it displays the sphere when casting.
-    })
 
-    --Now we have objList which contains any and all objects in that area.
-    --But we only want decks and cards. So we will create a new list
-    local decksAndCards = {}
-    --Then go through objList adding any decks/cards to our new list
-    -- print(objList)
-    -- print(#objList)
-    for _, obj in ipairs(objList) do
-        if obj.hit_object.tag == "Deck" or obj.hit_object.tag == "Card" then
-            table.insert(decksAndCards, obj.hit_object)
-        end
+function setupdeck(deck)
+    getAssetDeck()
+
+    if(assetdeck != nil ) then
+        destroyObject(assetdeck)
     end
 
-    --Now we return this to where it was called with the information
-    return decksAndCards
+    object_list = {deck}
+    copy(object_list)
+    print('copied')
+    log(object_list)
+    paste({position = self.positionToWorld(assetdeckpos), snap_to_grid = true})
+
+    Wait.frames(shuffleWonders,222)
+    Wait.frames(refillWonders,333)
+    return 1
+end
+
+function getAssetDeck()
+    assetdeckpos = {-1.090, 0.268, -1.206}
+    assetdecks = Global.call("findObjectsAtPosition",self.positionToWorld(assetdeckpos))
+    assetdeck = assetdecks[1]
 end

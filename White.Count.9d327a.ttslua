@@ -44,7 +44,7 @@ end
 
 function increaseCount(guid,num)
     local token = getObjectFromGUID(guid)
-    token.call("increasecustom",num)
+    token.call("increasecustom",num);
 end
 
 function resetCount(guid)
@@ -62,6 +62,7 @@ function isTapped(card)
 
     return (y >= 85 and y <=95) or (y >= 265 and y <= 275)
 end
+
 
 
 function check2ndeffects()
@@ -83,35 +84,35 @@ function check2ndeffects()
 
     for k,v in pairs(cs) do
         satisfied = check2ndoncard(v,cs)
-        if(satisfied) then print("SUCCESS") else print("BOOO") end
-        print("---")
+        if(satisfied) then
+            tokenBag = getObjectFromGUID('293024')
+            tokenBag.takeObject({position = v.getPosition()})
+
+        end
+
     end
 
 end
 
-
-
-
 function check2ndoncard(v,cards)
-    -- get other cards colors 
+    -- get other cards colors
     local othercards = getothercards(cards,v)
-    print(othercards['G']) --G
-    print(othercards['R']) --R
-    print(othercards['P']) --P
-    print("-")
+
 
     -- check conditions
     -- split conditions by ,
     cd={G=0,R=0,P=0}
-    cds = Split(v['CD'],',')
+    if(v.getDescription() == nil or v.getDescription() == '') then return false end
+    local meta = JSON.decode(v.getDescription())
+
+    if(meta == nil or meta['CD'] == nil or meta['CD'] == "NA" or meta['CD'] == "TR" or meta['CD'] == "RM" or meta['CD'] == "X") then return false end
+    cds = Split(meta['CD'],',')
+
     for i,j in pairs(cds) do
         cd[j] = cd[j] + 1
     end
 
-    print(cd.G)
-    print(cd.R)
-    print(cd.P)
-    print("-")
+
 
     -- check if satisfied
     satisfied = true
@@ -132,47 +133,29 @@ function getothercards(cardses,cd)
     restbl.P=0
 
     for k,v in ipairs(cardses) do
-        
-        if not (v.ID == cd.ID) then            
-            if(restbl[v.CR] == nil) then restbl[v.CR] = 0 end
-            restbl[v.CR] = restbl[v.CR] + 1
-            
+
+        if not (v.getGUID() == cd.getGUID()) then
+            local meta = JSON.decode(v.getDescription())
+            if(restbl[meta.CR] == nil) then restbl[meta.CR] = 0 end
+            restbl[meta.CR] = restbl[meta.CR] + 1
+
         end
     end
 
     return restbl
 end
 
-
--- utils
-
--- Compatibility: Lua-5.0
-function Split(str, delim, maxNb)
-    -- Eliminate bad cases...
-    if string.find(str, delim) == nil then
-       return { str }
-    end
-    if maxNb == nil or maxNb < 1 then
-       maxNb = 0    -- No limit
-    end
-    local result = {}
-    local pat = "(.-)" .. delim .. "()"
-    local nb = 0
-    local lastPos
-    for part, pos in string.gfind(str, pat) do
-       nb = nb + 1
-       result[nb] = part
-       lastPos = pos
-       if nb == maxNb then
-          break
-       end
-    end
-    -- Handle the last field
-    if nb ~= maxNb then
-       result[nb + 1] = string.sub(str, lastPos)
-    end
-    return result
- end
+function Split(inputstr, sep)
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={} ; i=1
+        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+                t[i] = str
+                i = i + 1
+        end
+        return t
+end
 
 
 

@@ -1,0 +1,61 @@
+
+function onload()
+  -- clickable area
+  self.createButton({
+      click_function="setup1v1", function_owner=self,
+      position={0, 0.2, 0}, height=700, width=700, color={1,1,1,0}, label=""
+  })
+  -- button label
+  self.createButton({
+      click_function="setup1v1", function_owner=self,
+      position={0, 0.2, 0}, height=1, width=1, color={1,1,1,1}, label="Setup 1v1", font_size=200
+  })
+  AssetRow = getObjectFromGUID('7e4572')
+  Lair = getObjectFromGUID('8d18a4')
+  WhiteMain = getObjectFromGUID('abbb3c')
+  GreenMain = getObjectFromGUID('695488')
+  AssetDeck = getObjectFromGUID('515348')
+  StartingDeck = getObjectFromGUID('92352c')
+  WonderDeck = getObjectFromGUID('54b74e')
+
+  AssetDeck = getObjectFromGUID('515348')
+end
+
+function setup1v1()
+    self.AssetBundle.playTriggerEffect(0)
+    -- cleanup
+    cleanup()
+    -- setup asset deck
+    AssetRow.call("setupdeck",AssetDeck)
+    -- setup wonder deck
+    
+    Lair.call("setupdeck",WonderDeck)
+    -- setup starting decks
+    -- setup starting decks
+    WhiteMain.setPositionSmooth({15,1,-10}, false, false)
+    GreenMain.setPositionSmooth({15,1,10}, false, false)
+
+    Wait.frames(function()  WhiteMain.call("setupdeck",StartingDeck) end,222)
+    Wait.frames(function()  GreenMain.call("setupdeck",StartingDeck) end,222)
+
+    return 1
+end
+
+function cleanup()
+    print('cleaning up')
+
+    objs = getAllObjects()
+    log(objs)
+    for k,v in pairs(objs) do
+        if(v.name == "Card" or v.name == "Deck") then
+            if(v.getName() == "City" or v.getName() == "Lair") then
+                -- do nothing
+            elseif(v.getPosition().x < -30) then
+                -- do nothing
+            else
+                log(v)
+                destroyObject(v)
+            end
+        end
+    end
+end

@@ -1,6 +1,12 @@
+--Creates invisible button onload, hidden under the "REFILL" on the deck pad
 playzone = '236bb8'
 discardzone = {13.190,4.560,9.602}
---Creates invisible button onload, hidden under the "REFILL" on the deck pad
+whitexdiff = -2.185
+whiteStartX = 5.541
+whitezed = 11.908
+
+y = 2.452
+currcount = 0
 function onLoad()
     self.createButton({
         click_function="click_refillDeck", function_owner=self,
@@ -30,6 +36,7 @@ function onLoad()
     pos_discard =  {-0.893, 0.174,0.058}
     pos_draw ={0.892, 0.174, 0.045}
     discardzone = self.positionToWorld(pos_discard)
+
     --This is which way is face down for a card or deck relative to the tool
     rot_offset = {x=0, y=0, z=180}
 
@@ -119,6 +126,7 @@ function click_getone(object,player)
 
     count = 0
     for _, obj in ipairs(drawList) do
+        --obj.deal(1,player)
         dealonetoplayarea(obj,player)
         count = count + 1
     end
@@ -131,15 +139,15 @@ function click_getone(object,player)
         click_refillDeck(object,player)
     end
 end
-
-greenxdiff = -2.185
-greenStartX = 5.541
-greenzed = 11.908
-y = 2.452
-currcount = 0
+--
+-- whitexdiff = 2.185
+-- whiteStartX = -3.199
+-- whitezed = -11.367
+-- y = 2.452
+-- currcount = 1
 
 function dealonetoplayarea(obj,player)
-    targetPosition = {greenStartX + (currcount * greenxdiff),y,greenzed}
+    targetPosition = {whiteStartX + (currcount * whitexdiff),y,whitezed}
 
     if obj.name == "Deck" then
         obj.takeObject({position = targetPosition, flip=true})

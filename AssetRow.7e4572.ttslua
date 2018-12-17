@@ -24,36 +24,36 @@ function onload()
     self.createButton({click_function="slot4", function_owner = self, position = {1.74,0.371,0.221},height=200,width=200,color=tempButtonColors})
     self.createButton({click_function="slot5", function_owner = self, position = {2.833,0.371,0.221},height=200,width=200,color=tempButtonColors})
     -- always shuffle deck
-    shuffleDeck()
+    assetdeckpos = {2.600,0.171,0.221}
+
 end
 
 function shuffleDeck()
-
-    assetdeck = getObjectFromGUID('515348')
+    if(assetdeck == nil) then getAssetDeck() end
     assetdeck.shuffle()
 end
 
 function slot1(params,p2,p3)
-    local cards = findObjectsAtPosition(slots[1])
+    local cards = Global.call("findObjectsAtPosition",self.positionToWorld(slots[1]))
     moveOrReplace(cards,p2,p3,1)
 end
 
 function slot2(params,p2,p3)
-    local cards = findObjectsAtPosition(slots[2])
+    local cards = Global.call("findObjectsAtPosition",self.positionToWorld(slots[2]))
     moveOrReplace(cards,p2,p3,2)
 end
 function slot3(params,p2,p3)
-    local cards = findObjectsAtPosition(slots[3])
+    local cards = Global.call("findObjectsAtPosition",self.positionToWorld(slots[3]))
     moveOrReplace(cards,p2,p3,3)
 end
 
 function slot4(params,p2,p3)
-    local cards = findObjectsAtPosition(slots[4])
+    local cards = Global.call("findObjectsAtPosition",self.positionToWorld(slots[4]))
     moveOrReplace(cards,p2,p3,4)
 end
 
 function slot5(params,p2,p3)
-    local cards = findObjectsAtPosition(slots[5])
+    local cards = Global.call("findObjectsAtPosition",self.positionToWorld(slots[5]))
     moveOrReplace(cards,p2,p3,5)
 end
 
@@ -91,7 +91,6 @@ function replacecard(cardOnSlot,p4,p2)
 
         KPObj.call("increasecustom",-requiredKP)
     end
-
 end
 
 function movetodiscard(cardOnSlot,p2)
@@ -127,13 +126,14 @@ function delayedRefill()
 
     return 1
 end
+
 function clickrefillassets()
     -- delay a few frames
 
     -- getcount(slots)
     -- print(getcount(slots))
     for _, obj in ipairs(slots) do
-        card = findObjectsAtPosition(obj)
+        card = Global.call("findObjectsAtPosition",self.positionToWorld(obj))
         if(card == nil or #card == 0 ) then
             dealoneto(obj)
         end
@@ -143,36 +143,39 @@ function clickrefillassets()
 end
 
 function dealoneto(targetpos)
-    assetdeck = getObjectFromGUID('515348')
+    if(assetdeck == nil) then getAssetDeck() end
     if(assetdeck != nil) then
         assetdeck.takeObject({position = self.positionToWorld(targetpos)})
     end
 end
 
-function findObjectsAtPosition(localPos)
-    --We convert that local position to a global table position
-    local globalPos = self.positionToWorld(localPos)
-    --We then do a raycast of a sphere on that position to find objects there
-    --It returns a list of hits which includes references to what it hit
-    local objList = Physics.cast({
-        origin=globalPos, --Where the cast takes place
-        direction={0,1,0}, --Which direction it moves (up is shown)
-        type=2, --Type. 2 is "sphere"
-        size={2,2,2}, --How large that sphere is
-        max_distance=1, --How far it moves. Just a little bit
-        debug=false --If it displays the sphere when casting.
-    })
+function setupdeck(deck)
+    getAssetDeck()
 
-    --Now we have objList which contains any and all objects in that area.
-    --But we only want decks and cards. So we will create a new list
-    local decksAndCards = {}
-    --Then go through objList adding any decks/cards to our new list
-    for _, obj in ipairs(objList) do
-        if obj.hit_object.tag == "Deck" or obj.hit_object.tag == "Card" then
-            table.insert(decksAndCards, obj.hit_object)
-        end
+
+    if(assetdeck != nil ) then
+        destroyObject(assetdeck)
     end
 
-    --Now we return this to where it was called with the information
-    return decksAndCards
+    object_list = {deck}
+    copy(object_list)
+    print('copied')
+    log(object_list)
+    paste({position = self.positionToWorld(assetdeckpos), snap_to_grid = true})
+
+
+
+    --
+    -- copy(deck)
+    -- paste(assetdeckpos)
+    --
+
+    Wait.frames(shuffleDeck,222)
+    Wait.frames(clickrefillassets,333)
+    return 1
+end
+
+function getAssetDeck()
+    assetdecks = Global.call("findObjectsAtPosition",self.positionToWorld(assetdeckpos))
+    assetdeck = assetdecks[1]
 end

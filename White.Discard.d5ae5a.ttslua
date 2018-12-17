@@ -16,7 +16,19 @@ function clickdiscard()
     for _, obj in ipairs(zoneObjects) do
         if obj.name == "Deck" or obj.name == "Card" then
             obj.setPositionSmooth(discardzone, false, true)
+        elseif obj.getDescription() == "Action Marker" then
+            -- tbagPos = getObjectFromGUID('293024').getPosition()
+            --
+            -- obj.setPositionSmooth({tbagPos.x,tbagPos.y + 3, tbagPos.z},false,false)
+            destroyObject(obj)
+        end
+    end
 
+    local objs = getAllObjects()
+    for k,v in pairs(objs) do
+        if v.getDescription() == "Action Marker" then
+
+            destroyObject(v)
         end
     end
 end

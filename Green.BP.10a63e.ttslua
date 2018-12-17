@@ -6,7 +6,7 @@
         saved_data = JSON.encode(data_to_save)
         return saved_data
     end
-    
+
     --Loads the saved data then creates the buttons
     function onload(saved_data)
         generateButtonParamiters()
@@ -18,7 +18,7 @@
             --If there wasn't saved data, the default value is set to 10.
             count = 10
         end
-    
+
         --Generates the buttons after putting the count value onto the 'display' button
         b_display.label = tostring(count)
         if count >= 100 then
@@ -32,20 +32,20 @@
         self.createButton(b_plus5)
         self.createButton(b_minus5)
     end
-    
+
     --Activates when + is hit. Adds 1 to 'count' then updates the display button.
     function increase()
         count = count + 1
         updateDisplay()
     end
-    
+
     function increasecustom(n)
-     
+
         count = count + n
         updateDisplay()
     end
-    
-    
+
+
     --Activates when - is hit. Subtracts 1 from 'count' then updates the display button.
     function decrease()
         --Prevents count from going below 0
@@ -54,13 +54,13 @@
             updateDisplay()
         end
     end
-    
+
     --Activates when + is hit. Adds 5 to 'count' then updates the display button.
     function increase5()
         count = count + 5
         updateDisplay()
     end
-    
+
     --Activates when - is hit. Subtracts 5 from 'count' then updates the display button.
     function decrease5()
         --Prevents count from going below 0
@@ -71,7 +71,7 @@
         end
         updateDisplay()
     end
-    
+
     function customSet()
         local description = self.getDescription()
         if description != '' and type(tonumber(description)) == 'number' then
@@ -80,7 +80,7 @@
             updateDisplay()
         end
     end
-    
+
     --function that updates the display. I trigger it whenever I change 'count'
     function updateDisplay()
         --If statement to resize font size if it gets too long
@@ -92,29 +92,28 @@
         b_display.label = tostring(count)
         self.editButton(b_display)
     end
-    
+
     --This is activated when onload runs. This sets all paramiters for our buttons.
     --I do not have to put this all into a function, but I prefer to do it this way.
     function generateButtonParamiters()
         b_display = {
             index = 0, click_function = 'customSet', function_owner = self, label = '',
-            position = {0,0.1,0}, width = 600, height = 600, font_size = 500
+            position = {0,0.1,0}, width = 1, height = 1, font_size = 500, font_color = {0.556,0.105,0.105}
         }
         b_plus = {
             click_function = 'increase', function_owner = self, label =  '+1',
-            position = {0.75,0.1,0.26}, width = 150, height = 300, font_size = 100
+            position = {1.75,0.1,0.5}, width = 450, height = 450, font_size = 100, color={0,0,0,0}
         }
         b_minus = {
             click_function = 'decrease', function_owner = self, label =  '-1',
-            position = {-0.75,0.1,0.26}, width = 150, height = 300, font_size = 100
+            position = {-1.75,0.1,0.5}, width = 450, height = 450, font_size = 100, color={0,0,0,0}
         }
         b_plus5 = {
             click_function = 'increase5', function_owner = self, label =  '+5',
-            position = {0.75,0.1,-0.29}, width = 150, height = 230, font_size = 100
+            position = {1.75,0.1,-0.5}, width = 450, height = 450, font_size = 100, color={0,0,0,0}
         }
         b_minus5 = {
             click_function = 'decrease5', function_owner = self, label =  '-5',
-            position = {-0.75,0.1,-0.29}, width = 150, height = 230, font_size = 100
+            position = {-1.75,0.1,-0.5}, width = 450, height = 450, font_size = 100, color={0,0,0,0}
         }
     end
-    

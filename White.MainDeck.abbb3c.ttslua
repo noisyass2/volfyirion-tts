@@ -1,6 +1,7 @@
 --Creates invisible button onload, hidden under the "REFILL" on the deck pad
 
-
+playzone = 'b58a77'
+discardzone = {15.805,4.583,-9.860}
 whitexdiff = 2.185
 whiteStartX = -3.199
 whitezed = -11.367
@@ -34,7 +35,7 @@ function onLoad()
     --Local positions for each pile of cards
     pos_discard =  {-0.893, 0.174,0.058}
     pos_draw ={0.892, 0.174, 0.045}
-
+    discardzone = self.positionToWorld(pos_discard)
 
     --This is which way is face down for a card or deck relative to the tool
     rot_offset = {x=0, y=0, z=180}
@@ -174,4 +175,38 @@ function countDeck()
 
     end
     return #drawList
+end
+
+function setupdeck(deck)
+    object_list = {deck}
+    copy(object_list)
+
+    paste({position = self.positionToWorld(pos_draw), snap_to_grid = true})
+end
+
+
+function discard()
+    -- get zone
+    zone = getObjectFromGUID(playzone)
+    zoneObjects = zone.getObjects()
+
+    for _, obj in ipairs(zoneObjects) do
+        if obj.name == "Deck" or obj.name == "Card" then
+            dzone = self.positionToWorld(pos_discard)
+            obj.setPositionSmooth(dzone, false, true)
+        elseif obj.getDescription() == "Action Marker" then
+            -- tbagPos = getObjectFromGUID('293024').getPosition()
+            --
+            -- obj.setPositionSmooth({tbagPos.x,tbagPos.y + 3, tbagPos.z},false,false)
+            destroyObject(obj)
+        end
+    end
+
+    local objs = getAllObjects()
+    for k,v in pairs(objs) do
+        if v.getDescription() == "Action Marker" then
+
+            destroyObject(v)
+        end
+    end
 end
